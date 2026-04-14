@@ -63,7 +63,7 @@ for await (const chunk of upper.pipe(exclaim).output) {
 ### Embedding
 `embedding` (Float32Array)
 
-Binary decode populates `meta.mime` automatically via magic-byte detection (35 formats).
+Binary decode populates `meta.mime` automatically via magic-byte detection (38 signatures). Use `detectFile()` for rich async detection (183 formats via file-type).
 
 ## Stream Operators
 
@@ -103,7 +103,7 @@ createProcessor<I, O>({
 })
 ```
 
-Returns `ProcessorHandle` with `.pipe(next)`, `.start()`, `.stop()`, `.output`.
+Returns `ProcessorHandle` with `.pipe(next)`, `.start()`, `.stop()`, `.output` / `.stdout` (normal chunks), `.stderr` (`error`/`signal` chunks routed separately).
 
 ### `pipe(...nodes)`
 
@@ -111,7 +111,7 @@ Compose `StreamNode`s: `pipe(a, b, c)` = `a → b → c`.
 
 ### `stdioProcessor(config)`
 
-Wraps a processor to read stdin / write stdout. Framing auto-selected by `inputType`.
+Wraps a processor to read stdin / write stdout. `error`/`signal` chunks write to `process.stderr`; all other types write to `process.stdout`. Framing auto-selected by `inputType`.
 
 ### `acpProcessor(conn, name, transform)`
 
@@ -119,7 +119,19 @@ Wraps an ACP `AgentSideConnection` as source and sink.
 
 ### `detectMime(data: Uint8Array): string`
 
-Magic-byte detection for 35 formats. Returns MIME type string or `application/octet-stream`.
+Sync magic-byte detection (38 signatures). Returns MIME type or `application/octet-stream`. Used in codec decode path.
+
+### `detectFile(data: Uint8Array): Promise<FileInfo>`
+
+Async rich detection via [file-type](https://www.npmjs.com/package/file-type) (183 formats) + BOM detection + text heuristics. Returns `{ mime, ext?, charset?, description? }`.
+
+### `splitStream(iter)`
+
+Fan-out an `AsyncIterable<Chunk>` into `{ stdout, stderr }` — `error`/`signal` chunks route to stderr, all others to stdout.
+
+### `ProcessorMachine`
+
+XState v5 state machine for processor lifecycle: `idle → running → error | stopped`. Exported for external inspection or extension.
 
 ### `registry.snapshot()`
 
@@ -133,4 +145,4 @@ Processors behave like CLI programs:
 node proc-a.js | node proc-b.js | node proc-c.js
 ```
 
-Framing is transparent to transform functions — ndjson for structured types, length-prefix for binary, newline for text.
+Normal chunks flow through `stdout`; `error`/`signal` chunks flow through `stderr`. Framing is transparent to transform functions — ndjson for structured types, length-prefix for binary, newline for text.
