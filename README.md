@@ -35,78 +35,60 @@ for await (const chunk of upper.pipe(exclaim).output) {
 }
 ```
 
-## Chunk types (49)
+## Chunk types (98)
 
 ### Structured / JSON
-| type | data | framing |
-|------|------|---------|
-| `json` | `T` (any) | ndjson |
-| `raw` | `unknown` | ndjson |
-| `ndjson` | `string` | newline |
-| `rpc` | `RpcMessage` | ndjson |
-| `event` | `EventData` | ndjson |
-| `span` | `SpanData` | ndjson |
-| `metric` | `MetricData` | ndjson |
-| `log` | `LogData` | ndjson |
-| `command` | `CommandData` | ndjson |
-| `patch` | `PatchOp[]` | ndjson |
-| `token` | `Token` | ndjson |
-| `error` | `ErrorData` | ndjson |
-| `signal` | `SignalData` | ndjson |
+`json`, `raw`, `ndjson`, `rpc`, `event`, `span`, `metric`, `log`, `command`, `patch`, `token`, `error`, `signal`,
+`socketio`, `envelope`, `ack`, `nack`, `ast`, `hash`, `timeseries`, `ohlcv`, `adjacency`
 
 ### Text / Markup
-| type | data | framing |
-|------|------|---------|
-| `text` | `string` | newline |
-| `delta` | `string` | newline |
-| `uuid` | `string` | newline |
-| `jwt` | `string` | newline |
-| `xml` | `string` | length-prefix |
-| `yaml` | `string` | length-prefix |
-| `markdown` | `string` | length-prefix |
-| `html` | `string` | length-prefix |
-| `sql` | `string` | length-prefix |
-| `geojson` | `string` | length-prefix |
-| `graphql` | `string` | length-prefix |
-| `csv` | `string[]` | newline |
+`text`, `delta`, `uuid`, `jwt`, `xml`, `yaml`, `markdown`, `html`, `sql`, `geojson`, `graphql`, `csv`,
+`toml`, `ini`, `jsonschema`, `avroschema`, `sourcemap`, `shader`, `obj`, `subtitle`, `playlist`, `graphml`
 
 ### Network / Protocol
-| type | data | framing |
-|------|------|---------|
-| `http-request` | `HttpRequest` | length-prefix |
-| `http-response` | `HttpResponse` | length-prefix |
-| `websocket` | `WebSocketMessage` | length-prefix |
-| `sse` | `SseMessage` | newline |
+`http-request`, `http-response`, `websocket`, `sse`, `dns`, `dhcp`, `icmp`
 
-### Binary / Media
-| type | data | framing | mime auto-detected |
-|------|------|---------|-------------------|
-| `binary` | `Uint8Array` | length-prefix | yes |
-| `image` | `Uint8Array` | length-prefix | yes |
-| `video` | `Uint8Array` | length-prefix | yes |
-| `audio` | `Uint8Array` | length-prefix | yes |
-| `pdf` | `Uint8Array` | length-prefix | yes |
-| `archive` | `Uint8Array` | length-prefix | yes |
-| `protobuf` | `Uint8Array` | length-prefix | yes |
-| `msgpack` | `Uint8Array` | length-prefix | yes |
-| `cbor` | `Uint8Array` | length-prefix | yes |
-| `arrow` | `Uint8Array` | length-prefix | yes |
-| `parquet` | `Uint8Array` | length-prefix | yes |
-| `frame` | `FrameData` | length-prefix | — |
-| `multipart` | `MultipartData` | length-prefix | yes |
-| `embedding` | `Float32Array` | length-prefix | — |
+### Binary / Media (mime auto-detected)
+`binary`, `image`, `video`, `audio`, `pdf`, `archive`,
+`protobuf`, `msgpack`, `cbor`, `arrow`, `parquet`,
+`wasm`, `font`, `onnx`, `safetensors`, `epub`, `docx`, `xlsx`, `pptx`, `gltf`, `qrcode`
+
+### Binary with JSON header
+`frame`, `multipart`, `ciphertext`, `signature`, `hmac`, `keypair`, `certificate`, `tensor`, `pointcloud`, `webtransport`
 
 ### Scalars
-| type | data | framing |
-|------|------|---------|
-| `uint8` | `number` | length-prefix (1B) |
-| `int32` | `number` | length-prefix (4B) |
-| `float64` | `number` | length-prefix (8B) |
-| `bool` | `boolean` | length-prefix (1B) |
-| `timestamp` | `number` | length-prefix (8B) |
-| `null` | `null` | length-prefix (0B) |
+`uint8`, `int8`, `int16`, `uint16`, `int32`, `uint32`, `int64` (bigint), `uint64` (bigint),
+`float32`, `float64`, `bool`, `timestamp`, `complex64`, `complex128`, `null`
+
+### Embedding
+`embedding` (Float32Array)
 
 Binary decode populates `meta.mime` automatically via magic-byte detection (35 formats).
+
+## Stream Operators
+
+`src/operators.ts` provides typed `StreamNode` factories for pipeline composition:
+
+```ts
+import { mux, split, gate, scan, zip, batch, window, throttle, debounce, take, drop, distinct, parallel, withBackpressure } from "./src/index.js";
+```
+
+| operator | description |
+|----------|-------------|
+| `mux(...sources)` | merge N input streams (interleaved) |
+| `split(flow, n)` | fan-out one stream to N branches |
+| `gate(pred)` | async predicate filter / blocking gate |
+| `scan(fn, seed)` | running accumulator, emits each intermediate value |
+| `zip(...sources)` | combine N streams into tuples |
+| `batch(n)` | group into fixed-size arrays |
+| `window(ms)` | group by time interval |
+| `throttle(ms)` | rate limit |
+| `debounce(ms)` | emit last value after quiet period |
+| `take(n)` | first N items |
+| `drop(n)` | skip first N items |
+| `distinct(keyFn?)` | deduplicate consecutive |
+| `parallel(fn, n)` | concurrent async map |
+| `withBackpressure(hwm)` | pause upstream at high-water mark |
 
 ## API
 
