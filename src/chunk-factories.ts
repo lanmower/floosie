@@ -1,6 +1,7 @@
 import type {
   Chunk, HttpRequest, HttpResponse, WebSocketMessage, SseMessage,
-  Token, ErrorData, SignalData,
+  Token, ErrorData, SignalData, RpcMessage, EventData, SpanData,
+  MetricData, LogData, CommandData, FrameData, PatchOp, MultipartData,
   JsonChunk, BinaryChunk, TextChunk, NdjsonChunk, CsvChunk,
   XmlChunk, YamlChunk, MarkdownChunk, HtmlChunk, SqlChunk,
   HttpRequestChunk, HttpResponseChunk, WebSocketChunk, SseChunk,
@@ -8,6 +9,10 @@ import type {
   EmbeddingChunk, TokenChunk, DeltaChunk,
   Uint8Chunk, Int32Chunk, Float64Chunk, BoolChunk, TimestampChunk, UuidChunk,
   ErrorChunk, SignalChunk, NullChunk,
+  ProtobufChunk, MsgpackChunk, CborChunk, ArrowChunk, ParquetChunk,
+  GeojsonChunk, JwtChunk, GraphqlChunk,
+  RpcChunk, EventChunk, SpanChunk, MetricChunk, LogChunk,
+  CommandChunk, FrameChunk, PatchChunk, MultipartChunk,
 } from "./chunk-types.js";
 
 type M = Record<string, unknown>;
@@ -52,3 +57,23 @@ export const uuid      = (data: string,       meta?: M): UuidChunk      => mk({ 
 export const error     = (data: ErrorData,    meta?: M): ErrorChunk     => mk({ type: "error",     data }, meta);
 export const signal    = (data: SignalData,   meta?: M): SignalChunk     => mk({ type: "signal",    data }, meta);
 export const nil       = (meta?: M): NullChunk                           => mk({ type: "null", data: null }, meta);
+
+export const protobuf  = (data: Uint8Array,   meta?: M): ProtobufChunk  => mk({ type: "protobuf",  data }, meta);
+export const msgpack   = (data: Uint8Array,   meta?: M): MsgpackChunk   => mk({ type: "msgpack",   data }, meta);
+export const cbor      = (data: Uint8Array,   meta?: M): CborChunk      => mk({ type: "cbor",      data }, meta);
+export const arrow     = (data: Uint8Array,   meta?: M): ArrowChunk     => mk({ type: "arrow",     data }, meta);
+export const parquet   = (data: Uint8Array,   meta?: M): ParquetChunk   => mk({ type: "parquet",   data }, meta);
+
+export const geojson   = (data: string,       meta?: M): GeojsonChunk   => mk({ type: "geojson",   data }, meta);
+export const jwt       = (data: string,       meta?: M): JwtChunk       => mk({ type: "jwt",       data }, meta);
+export const graphql   = (data: string,       meta?: M): GraphqlChunk   => mk({ type: "graphql",   data }, meta);
+
+export const rpc       = (data: RpcMessage,   meta?: M): RpcChunk       => mk({ type: "rpc",       data }, meta);
+export const event     = (data: EventData,    meta?: M): EventChunk     => mk({ type: "event",     data }, meta);
+export const span      = (data: SpanData,     meta?: M): SpanChunk      => mk({ type: "span",      data }, meta);
+export const metric    = (data: MetricData,   meta?: M): MetricChunk    => mk({ type: "metric",    data }, meta);
+export const log       = (data: LogData,      meta?: M): LogChunk       => mk({ type: "log",       data }, meta);
+export const command   = (data: CommandData,  meta?: M): CommandChunk   => mk({ type: "command",   data }, meta);
+export const frame     = (data: FrameData,    meta?: M): FrameChunk     => mk({ type: "frame",     data }, meta);
+export const patch     = (data: PatchOp[],    meta?: M): PatchChunk     => mk({ type: "patch",     data }, meta);
+export const multipart = (data: MultipartData,meta?: M): MultipartChunk => mk({ type: "multipart", data }, meta);

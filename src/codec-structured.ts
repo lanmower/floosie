@@ -4,9 +4,10 @@ import type { ChunkCodec } from "./codec-types.js";
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
-const jsonCodec = <K extends "http-request" | "http-response" | "websocket" | "token" | "error" | "signal">(
-  type: K,
-): ChunkCodec<Extract<Chunk, { type: K }>> => {
+const jsonCodec = <K extends
+  "http-request" | "http-response" | "websocket" | "token" | "error" | "signal" |
+  "rpc" | "event" | "span" | "metric" | "log" | "command" | "patch"
+>(type: K): ChunkCodec<Extract<Chunk, { type: K }>> => {
   type T = Extract<Chunk, { type: K }>;
   return {
     encode: (c) => enc.encode(JSON.stringify((c as { data: unknown }).data)),
@@ -47,5 +48,12 @@ export const STRUCTURED_CODECS = {
   "token":         jsonCodec("token"),
   "error":         jsonCodec("error"),
   "signal":        jsonCodec("signal"),
+  "rpc":           jsonCodec("rpc"),
+  "event":         jsonCodec("event"),
+  "span":          jsonCodec("span"),
+  "metric":        jsonCodec("metric"),
+  "log":           jsonCodec("log"),
+  "command":       jsonCodec("command"),
+  "patch":         jsonCodec("patch"),
   "sse":           SSE_CODEC,
 };
