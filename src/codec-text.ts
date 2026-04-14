@@ -4,7 +4,7 @@ import type { ChunkCodec } from "./codec-types.js";
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
-const utf8Codec = <K extends "text" | "ndjson" | "xml" | "yaml" | "markdown" | "html" | "sql" | "delta" | "uuid">(
+const utf8Codec = <K extends "text" | "ndjson" | "xml" | "yaml" | "markdown" | "html" | "sql" | "delta" | "uuid" | "geojson" | "jwt" | "graphql">(
   type: K,
 ): ChunkCodec<Extract<Chunk, { type: K }>> => {
   type T = Extract<Chunk, { type: K }>;
@@ -69,4 +69,7 @@ export const TEXT_CODECS = {
   sql:      utf8Codec("sql"),
   delta:    utf8Codec("delta"),
   uuid:     utf8Codec("uuid"),
+  geojson:  utf8Codec("geojson"),
+  jwt:      utf8Codec("jwt"),
+  graphql:  utf8Codec("graphql"),
 };

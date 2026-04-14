@@ -1,13 +1,18 @@
-import type { Chunk } from "./chunk-types.js";
+import type { Chunk, FrameData, MultipartData } from "./chunk-types.js";
 import type { ChunkCodec } from "./codec-types.js";
+import { detectMime } from "./mime.js";
 
-const pass = <K extends "binary" | "image" | "video" | "audio" | "pdf" | "archive">(
+const pass = <K extends "binary" | "image" | "video" | "audio" | "pdf" | "archive" | "protobuf" | "msgpack" | "cbor" | "arrow" | "parquet">(
   type: K,
 ): ChunkCodec<Extract<Chunk, { type: K }>> => {
   type T = Extract<Chunk, { type: K }>;
   return {
     encode: (c) => (c as { data: Uint8Array }).data,
-    decode: (b, meta) => (meta !== undefined ? { type, data: b, meta } : { type, data: b }) as T,
+    decode: (b, meta) => {
+      const mime = detectMime(b);
+      const m = meta !== undefined ? { ...meta, mime } : { mime };
+      return { type, data: b, meta: m } as T;
+    },
   };
 };
 
@@ -36,7 +41,7 @@ const i32Write = (v: number | boolean): Uint8Array => {
   view.setInt32(0, Number(v), true);
   return new Uint8Array(view.buffer.slice(0, 4));
 };
-const i32Read = (b: Uint8Array): number => { new DataView(b.buffer, b.byteOffset).getInt32(0, true); return new DataView(b.buffer, b.byteOffset).getInt32(0, true); };
+const i32Read = (b: Uint8Array): number => new DataView(b.buffer, b.byteOffset).getInt32(0, true);
 
 const f64Write = (v: number | boolean): Uint8Array => {
   view.setFloat64(0, Number(v), true);
@@ -57,6 +62,49 @@ export const NULL_CODEC: ChunkCodec<Extract<Chunk, { type: "null" }>> = {
   decode: (_, meta) => meta !== undefined ? { type: "null", data: null, meta } : { type: "null", data: null },
 };
 
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+export const FRAME_CODEC: ChunkCodec<Extract<Chunk, { type: "frame" }>> = {
+  encode: (c) => {
+    const header = enc.encode(JSON.stringify({ width: c.data.width, height: c.data.height, format: c.data.format }));
+    const hlen = new Uint8Array(4);
+    new DataView(hlen.buffer).setUint32(0, header.length, false);
+    const out = new Uint8Array(4 + header.length + c.data.data.length);
+    out.set(hlen, 0);
+    out.set(header, 4);
+    out.set(c.data.data, 4 + header.length);
+    return out;
+  },
+  decode: (b, meta) => {
+    const hlen = new DataView(b.buffer, b.byteOffset).getUint32(0, false);
+    const header = JSON.parse(dec.decode(b.subarray(4, 4 + hlen))) as { width: number; height: number; format: string };
+    const data: FrameData = { ...header, data: b.subarray(4 + hlen) };
+    return meta !== undefined ? { type: "frame", data, meta } : { type: "frame", data };
+  },
+};
+
+export const MULTIPART_CODEC: ChunkCodec<Extract<Chunk, { type: "multipart" }>> = {
+  encode: (c) => {
+    const header = enc.encode(JSON.stringify({ name: c.data.name, filename: c.data.filename, contentType: c.data.contentType }));
+    const hlen = new Uint8Array(4);
+    new DataView(hlen.buffer).setUint32(0, header.length, false);
+    const out = new Uint8Array(4 + header.length + c.data.data.length);
+    out.set(hlen, 0);
+    out.set(header, 4);
+    out.set(c.data.data, 4 + header.length);
+    return out;
+  },
+  decode: (b, meta) => {
+    const hlen = new DataView(b.buffer, b.byteOffset).getUint32(0, false);
+    const header = JSON.parse(dec.decode(b.subarray(4, 4 + hlen))) as { name: string; filename?: string; contentType?: string };
+    const mime = detectMime(b.subarray(4 + hlen));
+    const data: MultipartData = { ...header, data: b.subarray(4 + hlen) };
+    const m = meta !== undefined ? { ...meta, mime } : { mime };
+    return { type: "multipart", data, meta: m };
+  },
+};
+
 export const BINARY_CODECS = {
   binary:    pass("binary"),
   image:     pass("image"),
@@ -64,8 +112,15 @@ export const BINARY_CODECS = {
   audio:     pass("audio"),
   pdf:       pass("pdf"),
   archive:   pass("archive"),
+  protobuf:  pass("protobuf"),
+  msgpack:   pass("msgpack"),
+  cbor:      pass("cbor"),
+  arrow:     pass("arrow"),
+  parquet:   pass("parquet"),
   embedding: EMBEDDING_CODEC,
   null:      NULL_CODEC,
+  frame:     FRAME_CODEC,
+  multipart: MULTIPART_CODEC,
   uint8:     fixedNumCodec("uint8",     1, u8Write,  u8Read),
   int32:     fixedNumCodec("int32",     4, i32Write, i32Read),
   float64:   fixedNumCodec("float64",   8, f64Write, f64Read),

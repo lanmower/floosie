@@ -19,6 +19,12 @@ const FRAME_TYPES: Record<ChunkType, Framing> = {
   uint8: "length-prefix",   int32: "length-prefix",  float64: "length-prefix",
   bool: "length-prefix",    timestamp: "length-prefix",
   null: "length-prefix",
+  protobuf: "length-prefix",  msgpack: "length-prefix",  cbor: "length-prefix",
+  arrow: "length-prefix",     parquet: "length-prefix",
+  geojson: "length-prefix",   jwt: "newline",             graphql: "length-prefix",
+  rpc: "ndjson",              event: "ndjson",             span: "ndjson",
+  metric: "ndjson",           log: "ndjson",               command: "ndjson",
+  frame: "length-prefix",     patch: "ndjson",             multipart: "length-prefix",
 };
 
 async function* stdinChunks(type: ChunkType): AsyncIterable<Chunk> {
