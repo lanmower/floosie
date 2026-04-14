@@ -3,13 +3,22 @@ import type { Chunk, ChunkType } from "./chunk.js";
 import { encodeChunk, decodeChunk } from "./codec.js";
 import { createProcessor, type ProcessorConfig, type ProcessorHandle } from "./processor.js";
 
-const FRAME_TYPES: Record<ChunkType, "ndjson" | "length-prefix" | "newline"> = {
-  json: "ndjson",
-  raw: "ndjson",
-  text: "newline",
-  binary: "length-prefix",
-  image: "length-prefix",
-  video: "length-prefix",
+type Framing = "ndjson" | "length-prefix" | "newline";
+
+const FRAME_TYPES: Record<ChunkType, Framing> = {
+  json: "ndjson",       raw: "ndjson",      error: "ndjson",    signal: "ndjson",
+  token: "ndjson",      "http-request": "length-prefix",        "http-response": "length-prefix",
+  websocket: "length-prefix",
+  text: "newline",      ndjson: "newline",  sql: "newline",     delta: "newline",
+  uuid: "newline",      sse: "newline",
+  binary: "length-prefix",  image: "length-prefix",  video: "length-prefix",
+  audio: "length-prefix",   pdf: "length-prefix",    archive: "length-prefix",
+  embedding: "length-prefix",
+  xml: "length-prefix",     yaml: "length-prefix",   markdown: "length-prefix",
+  html: "length-prefix",    csv: "newline",
+  uint8: "length-prefix",   int32: "length-prefix",  float64: "length-prefix",
+  bool: "length-prefix",    timestamp: "length-prefix",
+  null: "length-prefix",
 };
 
 async function* stdinChunks(type: ChunkType): AsyncIterable<Chunk> {
@@ -25,8 +34,7 @@ async function* stdinChunks(type: ChunkType): AsyncIterable<Chunk> {
       buf = lines.pop() ?? "";
       for (const line of lines) {
         if (!line.trim()) continue;
-        const bytes = enc.encode(line);
-        yield decodeChunk(type, bytes);
+        yield decodeChunk(type, enc.encode(line));
       }
     }
     if (buf.trim()) yield decodeChunk(type, enc.encode(buf));
@@ -51,8 +59,7 @@ function writeToStdout(chunk: Chunk): void {
   const bytes = encodeChunk(chunk);
 
   if (strategy === "ndjson" || strategy === "newline") {
-    const str = new TextDecoder().decode(bytes);
-    process.stdout.write(str + "\n");
+    process.stdout.write(new TextDecoder().decode(bytes) + "\n");
     return;
   }
 
@@ -66,7 +73,6 @@ export function stdioProcessor<I extends Chunk, O extends Chunk>(
   config: Omit<ProcessorConfig<I, O>, "input" | "output"> & { inputType: ChunkType },
 ): ProcessorHandle<I, O> {
   const input = stdinChunks(config.inputType) as AsyncIterable<Chunk>;
-
   return createProcessor<I, O>({
     name: config.name,
     input,
