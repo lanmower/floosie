@@ -92,7 +92,7 @@ function ChunkGrid() {
     ...Object.entries(CHUNKS).map(([cat, types]) =>
       h('div', { style: 'margin-bottom:2rem' },
         h('h3', { style: 'font-size:0.9rem;color:#8b949e;margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.05em' }, CAT_LABELS[cat]),
-        h('div', { class: 'grid' }, ...types.map(t => h(Chip, { type: t, cat })))
+        h('div', { class: 'grid' }, ...types.map(t => Chip({ type: t, cat })))
       )
     )
   );
@@ -159,16 +159,16 @@ function App() {
     h('div', { class: 'section' },
       h('h2', {}, 'Chunk Types'),
       h('p', { style: 'color:#8b949e;margin-bottom:2rem' }, `Every value in a floosie stream is a typed chunk. ${total} built-in types cover binary media, text formats, network protocols, ML tensors, cryptographic primitives, and more.`),
-      h(ChunkGrid, {})
+      ChunkGrid()
     ),
     h('div', { class: 'section', style: 'background:#0d1117' },
       h('h2', {}, 'Stream Operators'),
       h('p', { style: 'color:#8b949e;margin-bottom:2rem' }, 'All operators are typed StreamNode factories that compose cleanly with pipe().'),
-      h(OpsTable, {})
+      OpsTable()
     ),
     h('div', { class: 'section' },
       h('h2', {}, 'Usage'),
-      h(CodeExample, {})
+      CodeExample()
     ),
     h('footer', {},
       'Built with ',
@@ -181,7 +181,7 @@ function App() {
   );
 }
 
-applyDiff(document.getElementById('app'), [h(App, {})]);
+applyDiff(document.getElementById('app'), [App()]);
 </script>
 </body>
 </html>
