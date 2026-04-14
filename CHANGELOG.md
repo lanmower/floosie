@@ -1,3 +1,7 @@
+### 0.4.1 — 2026-04-14
+- Fix detectMime: MP4 ftyp box detection now handles variable box sizes (any 4-byte length prefix followed by ftyp at offset 4)
+- Full validation pass: createProcessor lifecycle, registry, pipeline composition, framing, operators, error paths all verified
+
 ### 0.4.0 — 2026-04-14
 - Added src/operators.ts: mux, split, gate, scan, zip, withBackpressure, batch, window, throttle, debounce, take, drop, distinct, parallel
 - All operators are typed StreamNode factories wrapping sflow primitives

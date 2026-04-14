@@ -35,9 +35,12 @@ const SIGNATURES: Array<[number[], string]> = [
   [[0x50, 0x41, 0x52, 0x31],                                     "application/vnd.apache.parquet"],
 ];
 
+const FTYP = [0x66, 0x74, 0x79, 0x70];
+
 export function detectMime(data: Uint8Array): string {
   for (const [sig, mime] of SIGNATURES) {
     if (sig.every((b, i) => data[i] === b)) return mime;
   }
+  if (data.length >= 8 && FTYP.every((b, i) => data[4 + i] === b)) return "video/mp4";
   return "application/octet-stream";
 }
